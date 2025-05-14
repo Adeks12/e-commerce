@@ -106,12 +106,26 @@ $crossorigin = 'anonymous';
 				$.post("utilities_default.php", data, function(res) {
 					$.unblockUI();
 					var response = JSON.parse(res);
+					// console.log(response);
 					if (response.response_code == 0) {
-						$("#server_mssg").html(response.response_message);
-
+						// Swal.fire({
+						// 	icon: 'success',
+						// 	title: 'Success!',
+						// 	text: response.response_message,
+						// 	confirmButtonColor: '#3085d6'
+						// });
+						alert(response.response_message);
+						// Clear the form on success
+						$("#" + id)[0].reset();
 					} else {
 						regenerateCORS();
-						$("#server_mssg").html(response.response_message);
+						// Swal.fire({
+						// 	icon: 'error',
+						// 	title: 'Error!',
+						// 	text: response.response_message,
+						// 	confirmButtonColor: '#d33'
+						// });
+						alert(response.response_message);
 					}
 				});
 			}

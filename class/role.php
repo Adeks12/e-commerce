@@ -31,8 +31,20 @@ class Role extends dbobject
             
             if($data['operation'] == "new")
             {
-                $data['role_id'] = str_pad($this->getnextid('role'), 3, "0000000000000000", STR_PAD_LEFT);
-                // $data['role_enabled'] = "1";
+                // Get the highest role_id and increment it
+                $sql = "SELECT MAX(CAST(role_id AS UNSIGNED)) as max_id FROM role";
+                $result = $this->db_query($sql);
+                $next_id = (int)($result[0]['max_id'] ?? 0) + 1;
+                $data['role_id'] = str_pad($next_id, 3, "0", STR_PAD_LEFT);
+                
+                // Check if this role_id already exists
+                $check_sql = "SELECT role_id FROM role WHERE role_id = '$data[role_id]'";
+                $exists = $this->db_query($check_sql);
+                
+                if(!empty($exists)) {
+                    return json_encode(array('response_code'=>291,'response_message'=>'Role ID already exists. Please try again.'));
+                }
+                
                 $count = $this->doInsert('role',$data,array('op','operation','id', 'nrfa-csrf-token-label'));
                 if($count > 0)
                 {

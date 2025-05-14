@@ -37,6 +37,32 @@ $crossorigin = 'anonymous';
 	<link class="js-stylesheet" href="css/light.css" rel="stylesheet" >
 	<script src="js/settings.js"></script>
 
+	<!-- Add Font Awesome CSS in the head section -->
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+
+	<!-- Add the password container styles -->
+	<style>
+		.password-container {
+			position: relative;
+			width: 100%;
+		}
+		.password-container input {
+			width: 100%;
+			padding-right: 40px; /* Space for the eye icon */
+		}
+		.toggle-password {
+			position: absolute;
+			right: 10px;
+			top: 50%;
+			transform: translateY(-50%);
+			cursor: pointer;
+			display: none; /* Hidden by default */
+			color: #666;
+		}
+		.toggle-password:hover {
+			color: #333;
+		}
+	</style>
 
 </head>
 
@@ -66,9 +92,12 @@ $crossorigin = 'anonymous';
 											<label>Email</label>
 											<input class="form-control form-control-lg" type="text" name="email" required placeholder="Enter your Email" autocomplete="off" />
 										</div>
-										<div class="form-group py-3">
+										<div class="form-group">
 											<label>Password</label>
-											<input class="form-control form-control-lg" type="password" name="password" required placeholder="Enter your password" autocomplete="off" />
+											<div class="password-container">
+												<input class="form-control form-control-lg" type="password" name="password" id="password" placeholder="Enter your password" />
+												<i class="toggle-password fas fa-eye" data-target="password"></i>
+											</div>
 											<small>
 												<a href="forgot_password.php">Forgot password?</a>
 											</small>
@@ -145,6 +174,35 @@ $crossorigin = 'anonymous';
 				});
 			}
 		}
+
+		// Function to toggle password visibility
+		function togglePasswordVisibility(inputId, icon) {
+			const input = icon.previousElementSibling; // Get the input directly from the icon's previous sibling
+			if (input.type === 'password') {
+				input.type = 'text';
+				icon.classList.remove('fa-eye');
+				icon.classList.add('fa-eye-slash');
+			} else {
+				input.type = 'password';
+				icon.classList.remove('fa-eye-slash');
+				icon.classList.add('fa-eye');
+			}
+		}
+
+		// Add event listeners for password fields
+		document.querySelectorAll('.password-container input').forEach(input => {
+			const icon = input.nextElementSibling;
+			
+			// Show/hide eye icon based on input content
+			input.addEventListener('input', function() {
+				icon.style.display = this.value ? 'block' : 'none';
+			});
+
+			// Toggle password visibility when clicking the eye icon
+			icon.addEventListener('click', function() {
+				togglePasswordVisibility(this.dataset.target, this);
+			});
+		});
 	</script>
 </body>
 

@@ -32,16 +32,38 @@ if ($result['response_code'] != 0) {
         <meta name="description" content="Responsive Bootstrap 5 Admin &amp; Dashboard Template">
         <meta name="author" content="Bootlab">
         <meta http-equiv="Cache-control" content="no-cache;no-store">
-        <title>Vuvaa Lifestyle</title>
+        <title>Forgot Password - Vuvaa Lifestyle</title>
         <link rel="stylesheet" href="css/parsley.css" integrity="<?php echo $dbobject->CORS('css/parsley.css') ?>" crossorigin="<?php echo $crossorigin ?>">
         <link rel="preconnect" href="http://fonts.gstatic.com/" crossorigin>
         <link rel="icon" href="img/icon.png" sizes="32x32" />
         <!-- PICK ONE OF THE STYLES BELOW -->
         <link href="css/light.css" rel="stylesheet" integrity="<?php echo $dbobject->CORS('css/light.css') ?>" crossorigin="<?php echo $crossorigin ?>">
-
+        <!-- Font Awesome for eye icon -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
         <style>
             body {
                 opacity: 0;
+            }
+            .password-container {
+                position: relative;
+                width: 100%;
+            }
+            .password-container input {
+                width: 100%;
+                padding: 10px;
+                padding-right: 40px; /* Space for the eye icon */
+            }
+            .toggle-password {
+                position: absolute;
+                right: 10px;
+                top: 50%;
+                transform: translateY(-50%);
+                cursor: pointer;
+                display: none; /* Hidden by default */
+                color: #666;
+            }
+            .toggle-password:hover {
+                color: #333;
             }
         </style>
         <script src="js/settings.js" integrity="<?php echo $dbobject->CORS('js/settings.js') ?>" crossorigin="<?php echo $crossorigin ?>"></script>
@@ -63,7 +85,7 @@ if ($result['response_code'] != 0) {
                             <div class="d-table-cell align-middle">
 
                                 <div class="text-center mt-4">
-                                    <h1 class="h2">Welcome <?php echo $result['data']['lastname'] . " " . $result['data']['firstname'] ?> to Welcome to The Vuvaa Lifestyle Website</h1>
+                                    <h1 class="h2">Welcome <?php echo $result['data']['lastname'] . " " . $result['data']['firstname'] ?> Vuvaa Lifestyle Website</h1>
                                     <p class="lead">
                                         Sign in to your account
                                     </p>
@@ -79,11 +101,17 @@ if ($result['response_code'] != 0) {
 
                                             <div class="form-group">
                                                 <label>Enter password</label>
-                                                <input class="form-control form-control-lg" type="password" name="password" required placeholder="Enter your new password" autocomplete="off" />
+                                                <div class="password-container">
+                                                    <input class="form-control form-control-lg" type="password" name="password" required placeholder="Enter your new password" autocomplete="off" />
+                                                    <i class="toggle-password fas fa-eye" data-target="password"></i>
+                                                </div>
                                             </div>
                                             <div class="form-group">
                                                 <label>Confirm Password</label>
-                                                <input class="form-control form-control-lg" name="confirm_password" type="password" required placeholder="Confirm your password" autocomplete="off" />
+                                                <div class="password-container">
+                                                    <input class="form-control form-control-lg" name="confirm_password" type="password" required placeholder="Confirm your password" autocomplete="off" />
+                                                    <i class="toggle-password fas fa-eye" data-target="confirm_password"></i>
+                                                </div>
                                                 <small>
                                                 </small>
                                             </div>
@@ -111,16 +139,45 @@ if ($result['response_code'] != 0) {
                                         $.post("utilities_default.php", dd, function(re) {
                                             $("#save_facility").text("Save");
                                             // console.log(re);
-                                            if (re.response_code == 0) {
-                                                alert(re.response_message);
+                                            if (response.response_code == 0) {
+                                                alert(response.response_message);
                                                 setTimeout(() => {
-                                                    window.location = 'logout.php';
+                                                    window.location = 'index.php';
                                                 }, 2000);
                                             } else
                                                 regenerateCORS();
-                                            alert(re.response_message)
+                                            alert(response.response_message)
                                         }, 'json')
                                     }
+
+                                    // Function to toggle password visibility
+                                    function togglePasswordVisibility(inputId, icon) {
+                                        const input = icon.previousElementSibling; // Get the input directly from the icon's previous sibling
+                                        if (input.type === 'password') {
+                                            input.type = 'text';
+                                            icon.classList.remove('fa-eye');
+                                            icon.classList.add('fa-eye-slash');
+                                        } else {
+                                            input.type = 'password';
+                                            icon.classList.remove('fa-eye-slash');
+                                            icon.classList.add('fa-eye');
+                                        }
+                                    }
+
+                                    // Add event listeners for password fields
+                                    document.querySelectorAll('.password-container input').forEach(input => {
+                                        const icon = input.nextElementSibling;
+                                        
+                                        // Show/hide eye icon based on input content
+                                        input.addEventListener('input', function() {
+                                            icon.style.display = this.value ? 'block' : 'none';
+                                        });
+
+                                        // Toggle password visibility when clicking the eye icon
+                                        icon.addEventListener('click', function() {
+                                            togglePasswordVisibility(this.dataset.target, this);
+                                        });
+                                    });
                                 </script>
                             </div>
                         </div>

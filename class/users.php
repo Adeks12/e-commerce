@@ -2,6 +2,14 @@
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
+require_once __DIR__ . '/../phpmailer/phpmailer/src/PHPMailer.php';
+require_once __DIR__ . '/../phpmailer/phpmailer/src/SMTP.php';
+require_once __DIR__ . '/../phpmailer/phpmailer/src/Exception.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+use PHPMailer\PHPMailer\SMTP;
+
 class Users extends dbobject
 {
 
@@ -130,7 +138,7 @@ class Users extends dbobject
                             
                             // Reset pin missed count
                             $this->resetpinmissed($user[0]['email']);
-                            return json_encode(array("response_code" => 0, "response_message" => "Login Successful"));
+                            return json_encode(array("response_code" => 0, "response_message" => "Login Successful, Welcome to E-commerce Service"));
                         } else {
                             return json_encode(array("response_code" => 60, "response_message" => "Your account has been locked, kindly contact the administrator."));
                         }
@@ -199,48 +207,106 @@ class Users extends dbobject
     }
     public function generatePwdLink($data)
     {
-
-        $username               = $data['email'];
-        $sql                    = "SELECT username,email FROM userdata WHERE email = '$username'";
-        $rr                     = $this->db_query($sql, true);
-        if ( is_array($rr) && count($rr) > 0) {
+        $username = $data['email'];
+        $sql = "SELECT username, email, firstname, lastname FROM userdata WHERE email = '$username'";
+        $rr = $this->db_query($sql, true);
+        
+        if (is_array($rr) && count($rr) > 0) {
             if (filter_var($rr[0]['email'], FILTER_VALIDATE_EMAIL)) {
-                $data                   = $username . "::" . date('Y-m-d h:i:s');
-                $desencrypt             = new DESEncryption();
-                $key                    = "accessis4life_tlc";
-                $cipher_password        = $desencrypt->des($key, $data, 1, 0, null, null);
-                $sqltr_cipher_password  = $desencrypt->stringToHex($cipher_password);
-                $link                   = $sqltr_cipher_password;
-                $val                    = $this->getitemlabelarr("userdata", array('username'), array($username), array('firstname', 'lastname', 'email'));
-                $firstname              = (isset($val["firstname"])) ? $val['firstname'] : "";
-                $lastname               = (isset($val["lastname"])) ? $val['lastname'] : "";
-                $email                  = (isset($val["email"])) ? $val['email'] : "";
-                $sql                    = "UPDATE userdata SET reset_pwd_link = '$link' WHERE username = '$username' LIMIT 1";
+                $data = $username . "::" . date('Y-m-d h:i:s');
+                $desencrypt = new DESEncryption();
+                $key = "accessis4life_tlc";
+                $cipher_password = $desencrypt->des($key, $data, 1, 0, null, null);
+                $sqltr_cipher_password = $desencrypt->stringToHex($cipher_password);
+                $link = $sqltr_cipher_password;
                 
+                // Get user details directly from the query result
+                $firstname = $rr[0]['firstname'];
+                $lastname = $rr[0]['lastname'];
+                $email = $rr[0]['email'];
+                
+                if (empty($email)) {
+                    return json_encode(array('response_code' => 341, 'response_message' => 'Email address not found in user profile'));
+                }
+                
+                $sql = "UPDATE userdata SET reset_pwd_link = '$link' WHERE email = '$username' LIMIT 1";
                 $this->db_query($sql, false);
                 
-                mail($email, "Password Reset - The Lord's Chosen", "Dear " . $lastname . ", \n To reset your password kindly follow this link below \n http://accessng.com/tlc/pwd_reset.php?ga=" . $link);
-                return json_encode(array('response_code' => 0, 'response_message' => 'Follow the reset link sent to your email'));
+                // Create new PHPMailer instance
+                $mail = new PHPMailer(true);
+                
+                try {
+                    // Server settings
+                    // $mail->SMTPDebug = 2;  // Enable verbose debug output
+                    $mail->isSMTP();
+                    $mail->Host = 'smtp.gmail.com';
+                    $mail->SMTPAuth = true;
+                    $mail->Username = 'Jesuslovestestimony@gmail.com';
+                    $mail->Password = 'liuz vikp wzei ggkt';
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port = 587;
+
+                    // Recipients
+                    $mail->setFrom('Jesuslovestestimony@gmail.com', 'The Lord\'s Chosen');
+                    
+                    if (!$mail->addAddress($email, $firstname . ' ' . $lastname)) {
+                        return json_encode(array('response_code' => 342, 'response_message' => 'Invalid email address: ' . $email));
+                    }
+
+                    // Content
+                    $mail->isHTML(true);
+                    $mail->Subject = 'Password Reset - The Lord\'s Chosen';
+                    $mail->Body = "Dear " . htmlspecialchars($lastname) . ",<br><br>" .
+                                "To reset your password, please click the link below:<br><br>" .
+                                "<a href='http://localhost/e-commerce/pwd_reset.php?ga=" . $link . "'>Reset Password</a><br><br>" .
+                                "If the button above doesn't work, copy and paste this link into your browser:<br>" .
+                                "http://localhost/e-commerce/pwd_reset.php?ga=" . $link . "<br><br>" .
+                                "This link will expire in 72 hours.<br><br>" .
+                                "If you didn't request this password reset, please ignore this email.";
+                    
+                    $mail->AltBody = "Dear " . $lastname . ",\n\n" .
+                                   "To reset your password, please visit this link:\n" .
+                                   "http://localhost/e-commerce/pwd_reset.php?ga=" . $link . "\n\n" .
+                                   "This link will expire in 72 hours.\n\n" .
+                                   "If you didn't request this password reset, please ignore this email.";
+
+                    if($mail->send()) {
+                        return json_encode(array('response_code' => 0, 'response_message' => 'Password reset link has been sent to your email'));
+                    } else {
+                        return json_encode(array('response_code' => 500, 'response_message' => 'Failed to send password reset email. Error: ' . $mail->ErrorInfo));
+                    }
+                } catch (Exception $e) {
+                    return json_encode(array('response_code' => 500, 'response_message' => 'Failed to send password reset email. Error: ' . $mail->ErrorInfo));
+                }
             } else {
                 return json_encode(array('response_code' => 340, 'response_message' => 'Your email address was not setup properly'));
             }
         } else {
-            return json_encode(array('response_code' => 940, 'response_message' => 'Username does not exist'));
+            return json_encode(array('response_code' => 940, 'response_message' => 'Email address does not exist in our records'));
         }
     }
 
     public function verifyLink($link)
     {
+       
+
         $desencrypt      = new DESEncryption();
         $key             = "accessis4life_tlc";
         $json_value      = $this->DecryptData($key, $link);
         $arr             = explode("::", $json_value);
+        // var_dump($arr);
         $date            = $arr[1];
         $username        = $arr[0];
-        $sql = "SELECT reset_pwd_link,firstname,lastname FROM userdata WHERE username = '$username' AND reset_pwd_link = '$link' LIMIT 1";
-        $result = $this->db_query($sql);
+        $sql = "SELECT reset_pwd_link,firstname,lastname FROM userdata WHERE email = '$username' AND reset_pwd_link = '$link' LIMIT 1";
+        // var_dump($sql);
+        // exit();
+        $result = $this->db_query($sql, true);
+        // var_dump($result);
+        // exit();
         $count = (!empty($result)) ? count($result) : 0;
-        if ($count > 0) {
+        //  var_dump($count);
+        //  exit();
+         if ($count > 0) {
             $date1  = strtotime($date);
             $date2  = strtotime(date('Y-m-d h:i:s'));
             // Formulate the Difference between two dates 
@@ -328,7 +394,7 @@ class Users extends dbobject
             
             $insert = $this->doInsert('userdata', $data, array('op', 'nrfa-csrf-token-label','terms', 'confirm_password'));
             if ($insert == 1) {
-                return json_encode(array("response_code" => 0, "response_message" => 'Registration successful'));
+                return json_encode(array("response_code" => 0, "response_message" => 'Registration successful, Redirecting to Login page'));
             } else {
                 return json_encode(array("response_code" => 78, "response_message" => 'Failed to register user'));
             }
@@ -526,17 +592,32 @@ class Users extends dbobject
         if (!$validation['error']) {
             $username      = $data['username'];
             $user_password = $data['password'];
-            $key            = $username;
-            $desencrypt             = new DESEncryption();
+            
+            // Check if new password matches old password
+            $desencrypt = new DESEncryption();
+            $key = $username;
             $cipher_password = $desencrypt->des($key, $user_password, 1, 0, null, null);
             $str_cipher_password = $desencrypt->stringToHex($cipher_password);
-            $query_data = "UPDATE userdata set password='$str_cipher_password', passchg_logon = '0', user_locked = '0' where username= '$username'";
-            //                    echo $query_data;
+            
+            // Check if new password matches old password
+            $sql = "SELECT username FROM userdata WHERE email = '$username' AND password = '$str_cipher_password'";
+            $result = $this->db_query($sql, true);
+            
+            if ($result && count($result) > 0) {
+                return json_encode(array('response_code' => 45, 'response_message' => 'Please choose a password different from your current password'));
+            }
+            
+            $query_data = "UPDATE userdata set password='$str_cipher_password', passchg_logon = '0', user_locked = '0' where email= '$username'";
+                    
             $result_data = $this->db_query($query_data, false);
             if ($result_data > 0) {
-                return json_encode(array('response_code' => 0, 'response_message' => 'Your password was changed successfully'));
+                return json_encode(array(
+                    'response_code' => 0, 
+                    'response_message' => 'Your password was changed successfully. Please proceed to login page',
+                    'redirect_url' => 'index.php'
+                ));
             } else {
-                return json_encode(array('response_code' => 45, 'response_message' => 'Your password was changed successfully'));
+                return json_encode(array('response_code' => 45, 'response_message' => 'Failed to change password'));
             }
         } else {
             return json_encode(array("response_code" => 20, "response_message" => $validation['messages'][0]));
