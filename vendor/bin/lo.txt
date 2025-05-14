@@ -1,0 +1,1 @@
+update userdata set pin_missed=0 where username= 'sam@mail.com'

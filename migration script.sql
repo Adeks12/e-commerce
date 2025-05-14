@@ -1,0 +1,2 @@
+INSERT INTO `framework`.`parameter` (`parameter_name`, `parameter_value`, `privilege_flag`, `parameter_description`, `created`) VALUES ('site_local_url', 'http://framework.test:85/framework/', '0', 'Page Live Url', '2022-08-15 22:11:11');
+INSERT INTO `framework`.`parameter` (`parameter_name`, `parameter_value`, `privilege_flag`, `parameter_description`, `created`) VALUES ('site_live_url', 'https://vpurse.vuvaa.com/', '0', 'Page Local URL', '2022-08-15 22:12:54');

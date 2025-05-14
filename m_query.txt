@@ -1,0 +1,1 @@
+insert into userdata (role_id,sex,username,email,shipping_address,password,firstname,lastname,mobile_phone,created) VALUES ('0011','male','Adeks12','Jesuslovestestimony@gmail.com','Mazaram Topp','0x7afd0351df5d2ba1','Adekanmi','Testimony','09030642134','2025-05-13 06:21:32')
